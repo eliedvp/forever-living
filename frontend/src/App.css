@@ -1,0 +1,51 @@
+ .element-code-block pre[class*="language-"] {
+            background: #1e1e1e !important;
+            border: 1px solid #333 !important;
+            border-radius: 0.5rem !important;
+            margin: 0 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .element-code-block code[class*="language-"] {
+            background: transparent !important;
+            color: #d4d4d4 !important;
+            font-family: 'Fira Code', 'Courier New', monospace !important;
+            font-size: 0.875rem !important;
+            line-height: 1.6 !important;
+        }
+        
+        /* VS Code inspired colors */
+        .token.tag { color: #569cd6 !important; }
+        .token.attr-name { color: #9cdcfe !important; }
+        .token.attr-value { color: #ce9178 !important; }
+        .token.string { color: #ce9178 !important; }
+        .token.punctuation { color: #808080 !important; }
+        .token.comment { color: #6a9955 !important; font-style: italic !important; }
+        
+        /* Bootstrap classes highlighting */
+        .token.attr-value .token.string {
+            background: linear-gradient(transparent 0%, transparent 100%);
+        }
+
+        /* Fix unreadable active+hover sidebar navigation */
+        .nav-submenu .nav-link.active:hover {
+            background-color: var(--bs-primary) !important;
+            color: white !important;
+            transform: translateX(2px) !important;
+        }
+
+        .nav-submenu .nav-link.active:hover i {
+            opacity: 1 !important;
+            color: white !important;
+        }
+
+        .sidebar-nav .nav .nav-link.active:hover {
+            background-color: var(--bs-primary) !important;
+            color: white !important;
+            transform: none !important;
+        }
+
+
+        
+ 
+
