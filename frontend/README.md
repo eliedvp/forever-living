@@ -26,29 +26,7 @@ Application frontend e-commerce développée pour Forever Living Products, leade
 - **Gestion des commandes** : Suivi et traitement
 - **Gestion des utilisateurs** : Administration des comptes
 - **Analytics** : Rapports et métriques
-
-### 🎨 **Thème Forever Living Products**
-
-**Couleurs principales :**
-- **Primaire** : Jaune doré (#FFD700) - Couleur principale
-- **Secondaire** : Marron (#8B4513) - Couleur secondaire
-
-**Palette complète :**
-- Tons de jaune : `yellow-50` à `yellow-900`
-- Tons de marron : `brown-50` à `brown-900`
-
-**Classes utilitaires disponibles :**
-```scss
-// Backgrounds
-.bg-yellow-500    // Jaune doré
-.bg-brown-500     // Marron
-.forever-living-primary   // Style principal
-.forever-living-secondary // Style secondaire
-
-// Gradients
-.bg-gradient-forever-living // Dégradé jaune vers marron
-```
-
+ 
 ## 🚀 Technologies Utilisées
 
 ### **Frontend**
