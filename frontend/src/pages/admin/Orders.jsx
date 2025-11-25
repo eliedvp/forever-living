@@ -8,7 +8,6 @@ export default function Orders() {
   const [stats, setStats] = useState({ total: 0, pending: 0, shipped: 0, revenue: 0 });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -58,10 +57,6 @@ export default function Orders() {
     setSelectedOrders(checked ? filteredOrders.map(o => o.id) : []);
   };
 
-  const bulkAction = (action) => {
-    alert(`Applied "${action}" to ${selectedOrders.length} order(s)`);
-    setSelectedOrders([]);
-  };
 
   const sortBy = (field) => {
     const sorted = [...filteredOrders].sort((a, b) =>
