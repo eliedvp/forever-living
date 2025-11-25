@@ -1,0 +1,110 @@
+// ==========================================================================
+// Forever Living Products - Custom Utilities
+// Color utilities for yellow and brown palettes
+// ==========================================================================
+
+// Yellow Background Utilities
+.bg-yellow-50 { background-color: var(--yellow-50) !important; }
+.bg-yellow-100 { background-color: var(--yellow-100) !important; }
+.bg-yellow-200 { background-color: var(--yellow-200) !important; }
+.bg-yellow-300 { background-color: var(--yellow-300) !important; }
+.bg-yellow-400 { background-color: var(--yellow-400) !important; }
+.bg-yellow-500 { background-color: var(--yellow-500) !important; }
+.bg-yellow-600 { background-color: var(--yellow-600) !important; }
+.bg-yellow-700 { background-color: var(--yellow-700) !important; }
+.bg-yellow-800 { background-color: var(--yellow-800) !important; }
+.bg-yellow-900 { background-color: var(--yellow-900) !important; }
+
+// Brown Background Utilities
+.bg-brown-50 { background-color: var(--brown-50) !important; }
+.bg-brown-100 { background-color: var(--brown-100) !important; }
+.bg-brown-200 { background-color: var(--brown-200) !important; }
+.bg-brown-300 { background-color: var(--brown-300) !important; }
+.bg-brown-400 { background-color: var(--brown-400) !important; }
+.bg-brown-500 { background-color: var(--brown-500) !important; }
+.bg-brown-600 { background-color: var(--brown-600) !important; }
+.bg-brown-700 { background-color: var(--brown-700) !important; }
+.bg-brown-800 { background-color: var(--brown-800) !important; }
+.bg-brown-900 { background-color: var(--brown-900) !important; }
+
+// Yellow Text Utilities
+.text-yellow-50 { color: var(--yellow-50) !important; }
+.text-yellow-100 { color: var(--yellow-100) !important; }
+.text-yellow-200 { color: var(--yellow-200) !important; }
+.text-yellow-300 { color: var(--yellow-300) !important; }
+.text-yellow-400 { color: var(--yellow-400) !important; }
+.text-yellow-500 { color: var(--yellow-500) !important; }
+.text-yellow-600 { color: var(--yellow-600) !important; }
+.text-yellow-700 { color: var(--yellow-700) !important; }
+.text-yellow-800 { color: var(--yellow-800) !important; }
+.text-yellow-900 { color: var(--yellow-900) !important; }
+
+// Brown Text Utilities
+.text-brown-50 { color: var(--brown-50) !important; }
+.text-brown-100 { color: var(--brown-100) !important; }
+.text-brown-200 { color: var(--brown-200) !important; }
+.text-brown-300 { color: var(--brown-300) !important; }
+.text-brown-400 { color: var(--brown-400) !important; }
+.text-brown-500 { color: var(--brown-500) !important; }
+.text-brown-600 { color: var(--brown-600) !important; }
+.text-brown-700 { color: var(--brown-700) !important; }
+.text-brown-800 { color: var(--brown-800) !important; }
+.text-brown-900 { color: var(--brown-900) !important; }
+
+// Yellow Border Utilities
+.border-yellow-50 { border-color: var(--yellow-50) !important; }
+.border-yellow-100 { border-color: var(--yellow-100) !important; }
+.border-yellow-200 { border-color: var(--yellow-200) !important; }
+.border-yellow-300 { border-color: var(--yellow-300) !important; }
+.border-yellow-400 { border-color: var(--yellow-400) !important; }
+.border-yellow-500 { border-color: var(--yellow-500) !important; }
+.border-yellow-600 { border-color: var(--yellow-600) !important; }
+.border-yellow-700 { border-color: var(--yellow-700) !important; }
+.border-yellow-800 { border-color: var(--yellow-800) !important; }
+.border-yellow-900 { border-color: var(--yellow-900) !important; }
+
+// Brown Border Utilities
+.border-brown-50 { border-color: var(--brown-50) !important; }
+.border-brown-100 { border-color: var(--brown-100) !important; }
+.border-brown-200 { border-color: var(--brown-200) !important; }
+.border-brown-300 { border-color: var(--brown-300) !important; }
+.border-brown-400 { border-color: var(--brown-400) !important; }
+.border-brown-500 { border-color: var(--brown-500) !important; }
+.border-brown-600 { border-color: var(--brown-600) !important; }
+.border-brown-700 { border-color: var(--brown-700) !important; }
+.border-brown-800 { border-color: var(--brown-800) !important; }
+.border-brown-900 { border-color: var(--brown-900) !important; }
+
+// Forever Living Products Theme Classes
+.forever-living-primary {
+  background-color: var(--yellow-500);
+  color: var(--brown-900);
+}
+
+.forever-living-secondary {
+  background-color: var(--brown-500);
+  color: var(--yellow-50);
+}
+
+.forever-living-accent {
+  background-color: var(--yellow-400);
+  color: var(--brown-800);
+}
+
+.forever-living-muted {
+  background-color: var(--yellow-50);
+  color: var(--brown-600);
+}
+
+// Gradient backgrounds
+.bg-gradient-yellow {
+  background: linear-gradient(135deg, var(--yellow-400) 0%, var(--yellow-600) 100%);
+}
+
+.bg-gradient-brown {
+  background: linear-gradient(135deg, var(--brown-400) 0%, var(--brown-600) 100%);
+}
+
+.bg-gradient-forever-living {
+  background: linear-gradient(135deg, var(--yellow-500) 0%, var(--brown-500) 100%);
+}

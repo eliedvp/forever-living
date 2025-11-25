@@ -22,4 +22,26 @@
   .card {
     background-color: white;
   }
+
+  // Forever Living Products specific light theme styles
+  .forever-living-primary {
+    background-color: var(--yellow-500);
+    color: var(--brown-900);
+  }
+
+  .forever-living-secondary {
+    background-color: var(--brown-500);
+    color: var(--yellow-50);
+  }
+
+  .forever-living-accent {
+    background-color: var(--yellow-400);
+    color: var(--brown-800);
+  }
+
+  .forever-living-muted {
+    background-color: var(--yellow-50);
+    color: var(--brown-600);
+    border-color: var(--yellow-200);
+  }
 }

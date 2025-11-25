@@ -3,15 +3,38 @@
 // Modern Design System for 2025
 // ==========================================================================
 
-// Brand Colors - Modern Palette
-$primary: #6366f1;    // Indigo
-$secondary: #64748b;  // Slate
+// Brand Colors - Forever Living Products Palette
+$primary: #FFD700;    // Jaune doré - Couleur principale Forever Living
+$secondary: #8B4513;  // Marron - Couleur secondaire Forever Living
 $success: #10b981;    // Emerald
 $info: #06b6d4;       // Cyan
 $warning: #f59e0b;    // Amber
 $danger: #ef4444;     // Red
 $light: #f8fafc;     // Slate 50
 $dark: #1e293b;      // Slate 800
+
+// Forever Living Products Color Palette
+$yellow-50: #FFFBEB;   // Jaune très clair
+$yellow-100: #FEF3C7;  // Jaune clair
+$yellow-200: #FDE68A;  // Jaune pâle
+$yellow-300: #FCD34D;  // Jaune moyen
+$yellow-400: #FBBF24;  // Jaune
+$yellow-500: #FFD700;  // Jaune doré (primary)
+$yellow-600: #D97706;  // Jaune foncé
+$yellow-700: #B45309;  // Jaune sombre
+$yellow-800: #92400E;  // Jaune très sombre
+$yellow-900: #78350F;  // Jaune ultra sombre
+
+$brown-50: #FEFCF7;    // Marron très clair
+$brown-100: #FDF8F1;   // Marron clair
+$brown-200: #F5E9D5;   // Marron pâle
+$brown-300: #E6D5C3;   // Marron moyen clair
+$brown-400: #D2B48C;   // Marron sable
+$brown-500: #8B4513;   // Marron SaddleBrown (secondary)
+$brown-600: #6B4423;   // Marron foncé
+$brown-700: #5D3A1A;   // Marron sombre
+$brown-800: #4A2C17;   // Marron très sombre
+$brown-900: #3D2415;   // Marron ultra sombre
 
 // Extended Color Palette
 $purple: #8b5cf6;
@@ -127,16 +150,39 @@ $dark-primary: $primary;
   --sidebar-mini-width: #{$sidebar-mini-width};
   --header-height: #{$header-height};
   --footer-height: #{$footer-height};
-  
+
   --transition-base: #{$transition-base};
   --transition-fast: #{$transition-fast};
   --transition-slow: #{$transition-slow};
-  
+
   --border-radius: #{$border-radius};
   --border-radius-sm: #{$border-radius-sm};
   --border-radius-lg: #{$border-radius-lg};
-  
+
   --box-shadow: #{$box-shadow};
   --box-shadow-sm: #{$box-shadow-sm};
   --box-shadow-lg: #{$box-shadow-lg};
+
+  // Forever Living Products Colors
+  --yellow-50: #{$yellow-50};
+  --yellow-100: #{$yellow-100};
+  --yellow-200: #{$yellow-200};
+  --yellow-300: #{$yellow-300};
+  --yellow-400: #{$yellow-400};
+  --yellow-500: #{$yellow-500};
+  --yellow-600: #{$yellow-600};
+  --yellow-700: #{$yellow-700};
+  --yellow-800: #{$yellow-800};
+  --yellow-900: #{$yellow-900};
+
+  --brown-50: #{$brown-50};
+  --brown-100: #{$brown-100};
+  --brown-200: #{$brown-200};
+  --brown-300: #{$brown-300};
+  --brown-400: #{$brown-400};
+  --brown-500: #{$brown-500};
+  --brown-600: #{$brown-600};
+  --brown-700: #{$brown-700};
+  --brown-800: #{$brown-800};
+  --brown-900: #{$brown-900};
 } 
