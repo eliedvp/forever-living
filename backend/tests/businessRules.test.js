@@ -149,7 +149,7 @@ describe('commandes', () => {
       .set(auth(USER_ID))
       .send({ status: 'delivered' });
     expect(status.status).toBe(403);
-    expect(Order.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(Order.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test('createOrder calcule le total à partir des prix en base, pas du client', async () => {
@@ -174,6 +174,74 @@ describe('commandes', () => {
       expect.objectContaining({ user: USER_ID, totalPrice: 29 })
     );
     expect(cart.items).toEqual([]);
+  });
+});
+
+describe('changement de statut et annulation', () => {
+  const ORDER_ID = '64c000000000000000000009';
+  const orderDoc = (status) => ({
+    _id: ORDER_ID,
+    user: USER_ID,
+    status,
+    orderItems: [
+      { product: 'p1', qty: 2, price: 12 },
+      { product: 'p2', qty: 1, price: 5 },
+    ],
+    populate: jest.fn().mockResolvedValue(undefined),
+  });
+  const setStatus = (status) =>
+    request(app).put(`/api/orders/${ORDER_ID}/status`).set(auth(ADMIN_ID)).send({ status });
+
+  test('la transition est conditionnelle : une commande annulée est exclue de la mise à jour', async () => {
+    Order.findOneAndUpdate.mockResolvedValue(orderDoc('paid'));
+
+    const res = await setStatus('paid');
+
+    expect(res.status).toBe(200);
+    expect(Order.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: ORDER_ID, status: { $ne: 'cancelled' } },
+      { status: 'paid' },
+      { new: true, runValidators: true }
+    );
+    expect(Product.updateOne).not.toHaveBeenCalled();
+  });
+
+  test("deux annulations successives ne restituent le stock qu'une seule fois", async () => {
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    // 1re annulation : la transition a lieu ; 2e : la condition $ne échoue
+    Order.findOneAndUpdate.mockResolvedValueOnce(orderDoc('cancelled')).mockResolvedValueOnce(null);
+    Order.findById.mockResolvedValue(orderDoc('cancelled'));
+
+    const first = await setStatus('cancelled');
+    const second = await setStatus('cancelled');
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(second.body.status).toBe('cancelled');
+    expect(Product.updateOne).toHaveBeenCalledTimes(2);
+    expect(Product.updateOne).toHaveBeenCalledWith({ _id: 'p1' }, { $inc: { stock: 2 } });
+    expect(Product.updateOne).toHaveBeenCalledWith({ _id: 'p2' }, { $inc: { stock: 1 } });
+  });
+
+  test('une commande annulée ne peut pas repasser dans un autre statut (409)', async () => {
+    Order.findOneAndUpdate.mockResolvedValue(null);
+    Order.findById.mockResolvedValue(orderDoc('cancelled'));
+
+    const res = await setStatus('paid');
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe('Une commande annulée ne peut plus changer de statut');
+    expect(Product.updateOne).not.toHaveBeenCalled();
+  });
+
+  test('renvoie 404 pour une commande inexistante', async () => {
+    Order.findOneAndUpdate.mockResolvedValue(null);
+    Order.findById.mockResolvedValue(null);
+
+    const res = await setStatus('cancelled');
+
+    expect(res.status).toBe(404);
+    expect(Product.updateOne).not.toHaveBeenCalled();
   });
 });
 
