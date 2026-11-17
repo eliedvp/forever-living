@@ -1,6 +1,7 @@
 const Category = require('../models/Category');
 const fs = require('fs');
 const path = require('path');
+const { resolveUploadPath } = require('../utils/uploadPath');
 
 // @desc    Récupérer toutes les catégories
 // @route   GET /api/categories
@@ -74,8 +75,8 @@ exports.updateCategory = async (req, res) => {
     if (req.file) {
       // Supprimer l'ancienne image si elle existe
       if (category.image) {
-        const oldImagePath = path.join(__dirname, '../..', category.image);
-        if (fs.existsSync(oldImagePath)) {
+        const oldImagePath = resolveUploadPath(category.image);
+        if (oldImagePath && fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
       }
@@ -112,8 +113,8 @@ exports.deleteCategory = async (req, res) => {
 
     // Supprimer l'image associée si elle existe
     if (category.image) {
-      const imagePath = path.join(__dirname, '../..', category.image);
-      if (fs.existsSync(imagePath)) {
+      const imagePath = resolveUploadPath(category.image);
+      if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
     }
