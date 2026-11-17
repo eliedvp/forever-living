@@ -2,6 +2,10 @@ const Product = require('../models/Product');
 const fs = require('fs');
 const path = require('path');
 const { resolveUploadPath } = require('../utils/uploadPath');
+const pickFields = require('../utils/pickFields');
+
+// Champs modifiables depuis la requête (l'image passe uniquement par l'upload)
+const PRODUCT_FIELDS = ['name', 'description', 'price', 'stock', 'category'];
 
 // @desc    Récupérer tous les produits
 // @route   GET /api/products
@@ -32,7 +36,7 @@ exports.getProductById = async (req, res, next) => {
 // @route   POST /api/products
 exports.createProduct = async (req, res, next) => {
   try {
-    const productData = { ...req.body };
+    const productData = pickFields(req.body, PRODUCT_FIELDS);
     
     // Si une image est uploadée, ajouter le chemin de l'image
     if (req.file) {
@@ -69,7 +73,7 @@ exports.updateProduct = async (req, res, next) => {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
 
-    const updateData = { ...req.body };
+    const updateData = pickFields(req.body, PRODUCT_FIELDS);
     
     // Si une nouvelle image est uploadée
     if (req.file) {

@@ -12,6 +12,7 @@ const User = require('../src/models/User');
 const Order = require('../src/models/Order');
 const Cart = require('../src/models/Cart');
 const Product = require('../src/models/Product');
+const Category = require('../src/models/Category');
 const imageFileFilter = require('../src/middleware/imageFileFilter');
 const { errorHandler } = require('../src/middleware/errorMiddleware');
 const { resolveUploadPath, UPLOADS_ROOT } = require('../src/utils/uploadPath');
@@ -517,6 +518,58 @@ describe('uploads d\'images', () => {
     const savedFile = resolveUploadPath(res.body.image);
     expect(fs.existsSync(savedFile)).toBe(true);
     fs.unlinkSync(savedFile);
+  });
+
+  test('POST /api/products ne transmet au modèle que les champs autorisés', async () => {
+    Product.create.mockImplementation(async (data) => data);
+
+    const res = await request(app)
+      .post('/api/products')
+      .set(auth(ADMIN_ID))
+      .send({
+        name: 'Gel Aloe',
+        price: 20,
+        stock: 5,
+        description: 'Gel',
+        rating: 5,
+        numReviews: 1000,
+        image: '/uploads/../../app.js',
+        _id: '64e0000000000000000000ff',
+        $set: { price: 0 },
+      });
+
+    expect(res.status).toBe(201);
+    expect(Product.create).toHaveBeenCalledWith({ name: 'Gel Aloe', price: 20, stock: 5, description: 'Gel' });
+  });
+
+  test('PUT /api/products/:id ignore les opérateurs MongoDB et champs non autorisés', async () => {
+    const productId = '64e000000000000000000001';
+    Product.findById.mockResolvedValue({ _id: productId, name: 'Gel Aloe' });
+    Product.findByIdAndUpdate.mockReturnValue(mockQuery({ _id: productId, price: 25 }));
+
+    const res = await request(app)
+      .put(`/api/products/${productId}`)
+      .set(auth(ADMIN_ID))
+      .send({ price: 25, $inc: { stock: 1000 }, $set: { rating: 5 }, numReviews: 3 });
+
+    expect(res.status).toBe(200);
+    expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
+      productId,
+      { price: 25 },
+      { new: true, runValidators: true }
+    );
+  });
+
+  test('POST /api/categories ne transmet au modèle que le nom et la description', async () => {
+    Category.create.mockImplementation(async (data) => data);
+
+    const res = await request(app)
+      .post('/api/categories')
+      .set(auth(ADMIN_ID))
+      .send({ name: 'Soins', description: 'Visage', image: 'http://exemple.test/x.png', $set: { name: 'x' } });
+
+    expect(res.status).toBe(201);
+    expect(Category.create).toHaveBeenCalledWith({ name: 'Soins', description: 'Visage' });
   });
 
   test('POST /api/products est refusé à un client (403)', async () => {
