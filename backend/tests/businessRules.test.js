@@ -382,6 +382,40 @@ describe('panier', () => {
     expect(Product.findById).not.toHaveBeenCalled();
   });
 
+  test('refuse un ajout qui porterait la quantité cumulée d\x27un article au-delà de 99', async () => {
+    const productId = '64e000000000000000000001';
+    const cart = {
+      items: [{ product: productId, qty: 98 }],
+      save: jest.fn().mockResolvedValue(undefined),
+      populate: jest.fn().mockResolvedValue(undefined),
+    };
+    Product.findById.mockResolvedValue({ _id: productId });
+    Cart.findOne.mockResolvedValue(cart);
+
+    const res = await request(app).post('/api/cart').set(auth(USER_ID)).send({ productId, qty: 2 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Quantité maximale par article : 99');
+    expect(cart.items[0].qty).toBe(98);
+    expect(cart.save).not.toHaveBeenCalled();
+  });
+
+  test('accepte un ajout qui atteint exactement 99 au cumul', async () => {
+    const productId = '64e000000000000000000001';
+    const cart = {
+      items: [{ product: productId, qty: 98 }],
+      save: jest.fn().mockResolvedValue(undefined),
+      populate: jest.fn().mockResolvedValue(undefined),
+    };
+    Product.findById.mockResolvedValue({ _id: productId });
+    Cart.findOne.mockResolvedValue(cart);
+
+    const res = await request(app).post('/api/cart').set(auth(USER_ID)).send({ productId, qty: 1 });
+
+    expect(res.status).toBe(200);
+    expect(cart.items[0].qty).toBe(99);
+  });
+
   test('refuse une mise à jour de quantité supérieure à 99', async () => {
     const res = await request(app)
       .put('/api/cart/64d000000000000000000001')
