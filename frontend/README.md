@@ -1,4 +1,4 @@
-# 🌿 Forever Living Products - Frontend E-commerce
+# 🌿 Forever Living – Frontend e-commerce
 
 > **Application e-commerce moderne spécialisée dans les produits naturels à base d'Aloe Vera**
 
@@ -9,6 +9,8 @@
 ## 📋 Description
 
 Interface React d'une boutique en ligne dédiée aux produits Forever Living à base d'Aloe Vera (bien-être, beauté et santé). Elle comprend un espace client et un back-office d'administration, et s'appuie sur l'API Express du dossier `backend/` (voir le README à la racine du dépôt).
+
+> Projet personnel de formation inspiré du catalogue Forever Living ; non affilié à Forever Living Products.
 
 ### ✨ Fonctionnalités Principales
 

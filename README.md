@@ -2,6 +2,8 @@
 
 Application e-commerce full stack (MongoDB, Express, React, Node.js) dédiée aux produits Forever Living à base d'Aloe Vera : API REST sécurisée par JWT et interface React avec espace client et back-office.
 
+> Projet personnel de formation inspiré du catalogue Forever Living ; non affilié à Forever Living Products.
+
 ![CI](https://github.com/eliedvp/forever-living/actions/workflows/ci.yml/badge.svg)
 
 ## Fonctionnalités
