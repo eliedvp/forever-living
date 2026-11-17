@@ -13,17 +13,35 @@ const releaseStock = (reservedItems) =>
     )
   );
 
+// Remet dans le panier les articles retirés au début d'une commande qui échoue.
+const restoreCartItems = (userId, items) =>
+  Cart.updateOne({ user: userId }, { $push: { items: { $each: items } } }).catch((err) => {
+    console.error(`Restauration du panier impossible pour l'utilisateur ${userId}`, err);
+  });
+
 // @desc    Créer une commande
 // @route   POST /api/orders
 exports.createOrder = async (req, res, next) => {
+  // Articles retirés du panier par cette requête, à remettre en cas d'échec
+  let takenItems = null;
+  let order = null;
   try {
-    const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
-    if (!cart || cart.items.length === 0) {
+    // Le panier est pris et vidé en une seule opération atomique : deux requêtes
+    // simultanées ne peuvent pas transformer le même panier en deux commandes.
+    const cart = await Cart.findOneAndUpdate(
+      { user: req.user._id, 'items.0': { $exists: true } },
+      { $set: { items: [] } },
+      { new: false }
+    );
+    if (!cart) {
       return res.status(400).json({ message: 'Panier vide' });
     }
+    takenItems = cart.items.map((item) => ({ product: item.product, qty: item.qty }));
+    await cart.populate('items.product');
 
     // Un produit supprimé depuis son ajout au panier n'est plus peuplé (null)
     if (cart.items.some((item) => !item.product)) {
+      await restoreCartItems(req.user._id, takenItems);
       return res.status(400).json({ message: "Un produit du panier n'est plus disponible" });
     }
 
@@ -43,7 +61,6 @@ exports.createOrder = async (req, res, next) => {
     // sont appliqués dans une seule opération atomique, ce qui empêche deux
     // commandes simultanées de faire passer le stock sous zéro.
     const reservedItems = [];
-    let order;
     try {
       for (const [index, item] of orderItems.entries()) {
         const updated = await Product.findOneAndUpdate(
@@ -53,6 +70,7 @@ exports.createOrder = async (req, res, next) => {
         );
         if (!updated) {
           await releaseStock(reservedItems);
+          await restoreCartItems(req.user._id, takenItems);
           return res.status(409).json({
             message: `Stock insuffisant pour le produit « ${cart.items[index].product.name} »`,
             productId: item.product,
@@ -71,13 +89,13 @@ exports.createOrder = async (req, res, next) => {
       throw err;
     }
 
-    // Vider le panier après création de la commande
-    cart.items = [];
-    await cart.save();
-
     await order.populate('orderItems.product');
     res.status(201).json(order);
   } catch (err) {
+    // La commande n'a pas été créée : le client retrouve son panier
+    if (takenItems && !order) {
+      await restoreCartItems(req.user._id, takenItems);
+    }
     next(err);
   }
 };
