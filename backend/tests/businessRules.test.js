@@ -493,6 +493,46 @@ describe('erreurs serveur', () => {
     expect(res.json).toHaveBeenCalledWith({ message: 'Cette valeur est déjà utilisée', stack: null });
   });
 
+  test.each([201, 302])(
+    'un statut préréglé %i ne fait ni passer l\x27erreur pour un succès ni fuiter son message',
+    (preset) => {
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      const res = fakeRes();
+      res.statusCode = preset;
+
+      errorHandler(new Error('détail interne'), {}, res, () => {});
+
+      expect(res.statusCode).toBe(500);
+      expect(res.json).toHaveBeenCalledWith({ message: 'Erreur serveur', stack: null });
+      console.error.mockRestore();
+    }
+  );
+
+  test('une erreur 4xx marquée expose === false renvoie un message générique', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const res = fakeRes();
+    const err = Object.assign(new Error('détail interne'), { status: 400, expose: false });
+
+    errorHandler(err, {}, res, () => {});
+
+    expect(res.statusCode).toBe(500);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Erreur serveur', stack: null });
+    console.error.mockRestore();
+  });
+
+  test('si les en-têtes sont déjà envoyés, l\x27erreur est déléguée à Express', () => {
+    const res = fakeRes();
+    res.headersSent = true;
+    const next = jest.fn();
+    const err = new Error('flux interrompu');
+
+    errorHandler(err, {}, res, next);
+
+    expect(next).toHaveBeenCalledWith(err);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
   test('un JSON mal formé renvoie 400 avec un message générique', async () => {
     const res = await request(app)
       .post('/api/auth/login')
