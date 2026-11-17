@@ -181,6 +181,42 @@ describe('panier', () => {
     expect(res.status).toBe(400);
     expect(Product.findById).not.toHaveBeenCalled();
   });
+
+  test('une quantité envoyée en chaîne est convertie en nombre avant l\x27addition', async () => {
+    const productId = '64e000000000000000000001';
+    const cart = {
+      items: [{ product: productId, qty: 2 }],
+      save: jest.fn().mockResolvedValue(undefined),
+      populate: jest.fn().mockResolvedValue(undefined),
+    };
+    Product.findById.mockResolvedValue({ _id: productId });
+    Cart.findOne.mockResolvedValue(cart);
+
+    const res = await request(app).post('/api/cart').set(auth(USER_ID)).send({ productId, qty: '5' });
+
+    expect(res.status).toBe(200);
+    expect(cart.items[0].qty).toBe(7);
+  });
+
+  test('refuse une quantité supérieure à 99', async () => {
+    const res = await request(app)
+      .post('/api/cart')
+      .set(auth(USER_ID))
+      .send({ productId: '64e000000000000000000001', qty: 100 });
+
+    expect(res.status).toBe(400);
+    expect(Product.findById).not.toHaveBeenCalled();
+  });
+
+  test('refuse une mise à jour de quantité supérieure à 99', async () => {
+    const res = await request(app)
+      .put('/api/cart/64d000000000000000000001')
+      .set(auth(USER_ID))
+      .send({ qty: 100 });
+
+    expect(res.status).toBe(400);
+    expect(Cart.findOne).not.toHaveBeenCalled();
+  });
 });
 
 describe('uploads d\'images', () => {
