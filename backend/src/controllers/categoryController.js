@@ -2,6 +2,10 @@ const Category = require('../models/Category');
 const fs = require('fs');
 const path = require('path');
 const { resolveUploadPath } = require('../utils/uploadPath');
+const pickFields = require('../utils/pickFields');
+
+// Champs modifiables depuis la requête (l'image passe uniquement par l'upload)
+const CATEGORY_FIELDS = ['name', 'description'];
 
 // @desc    Récupérer toutes les catégories
 // @route   GET /api/categories
@@ -32,7 +36,7 @@ exports.getCategoryById = async (req, res, next) => {
 // @route   POST /api/categories
 exports.createCategory = async (req, res, next) => {
   try {
-    const categoryData = { ...req.body };
+    const categoryData = pickFields(req.body, CATEGORY_FIELDS);
     
     // Si une image est uploadée, ajouter le chemin de l'image
     if (req.file) {
@@ -69,7 +73,7 @@ exports.updateCategory = async (req, res, next) => {
       return res.status(404).json({ message: 'Catégorie non trouvée' });
     }
 
-    const updateData = { ...req.body };
+    const updateData = pickFields(req.body, CATEGORY_FIELDS);
     
     // Si une nouvelle image est uploadée
     if (req.file) {
