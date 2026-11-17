@@ -78,7 +78,7 @@ Variables d'environnement (`backend/.env`) :
 | `MONGO_URI` | Chaîne de connexion MongoDB |
 | `JWT_SECRET` | Secret de signature des jetons, **obligatoire** : le serveur refuse de démarrer s'il est absent, fait moins de 32 caractères ou reprend la valeur d'exemple |
 | `CORS_ORIGIN` | Optionnel : origines autorisées, séparées par des virgules (toutes si vide) |
-| `NODE_ENV` | Mettre `production` en production pour masquer les traces d'erreur dans les réponses |
+| `NODE_ENV` | `development` pour inclure la trace (stack) des erreurs dans les réponses ; toute autre valeur (dont `production`) la masque et remplace le détail des erreurs 500 par un message générique |
 
 L'API répond sur `http://localhost:5001` ; les images uploadées sont servies depuis `/uploads`.
 
