@@ -146,5 +146,5 @@ Préfixe : `/api`. « Auth » = en-tête `Authorization: Bearer <token>` requis 
 - Ajouter les pages de connexion et d'inscription côté frontend (les liens existent, les routes pas encore) et protéger les routes d'administration côté client.
 - Relier le panier et le paiement du frontend aux endpoints `/cart` et `/orders`, et connecter les écrans commandes, utilisateurs et tableau de bord à l'API.
 - Vérifier et décrémenter le stock lors de la création d'une commande.
-- Mettre à jour les dépendances signalées par `npm audit` (notamment Multer 1.x vers 2.x) et ajouter une limitation de débit sur les routes d'authentification.
+- Ajouter une limitation de débit sur les routes d'authentification.
 - Corriger les avertissements ESLint du frontend pour pouvoir ajouter le build à la CI.
