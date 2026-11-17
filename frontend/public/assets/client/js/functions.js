@@ -1,8 +1,11 @@
 ;(function($) {
     'use strict';
-    if ( $('.mercado-google-maps').length == 1) {
+    // Clé Google Maps : à définir via window.GOOGLE_MAPS_API_KEY (jamais en dur dans le dépôt).
+    // Sans clé, la carte n'est simplement pas chargée.
+    var googleMapsApiKey = window.GOOGLE_MAPS_API_KEY || '';
+    if ( googleMapsApiKey && $('.mercado-google-maps').length == 1) {
         var wfm  = document.createElement('script');
-        wfm.src  = 'http://maps.googleapis.com/maps/api/js?key=AIzaSyBpXkIHekTsMPHuS_yuG1cIK0j5TvVjFkE';
+        wfm.src  = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(googleMapsApiKey);
         wfm.type = 'text/javascript';
         var sm   = document.getElementsByTagName('script')[ 0 ];
         sm.parentNode.insertBefore(wfm, sm);
@@ -459,6 +462,7 @@
         },
 
         mercado_google_maps: function () {
+            if ( typeof google === 'undefined' || !google.maps ) return;
             if ( $('.mercado-google-maps').length == 1 ) {
                 $('.mercado-google-maps').each(function () {
                     var $this            = $(this),
