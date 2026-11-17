@@ -76,7 +76,7 @@ Variables d'environnement (`backend/.env`) :
 | --- | --- |
 | `PORT` | Port de l'API (5001 par défaut) |
 | `MONGO_URI` | Chaîne de connexion MongoDB |
-| `JWT_SECRET` | Secret de signature des jetons, **obligatoire** : le serveur refuse de démarrer sans lui |
+| `JWT_SECRET` | Secret de signature des jetons, **obligatoire** : le serveur refuse de démarrer s'il est absent, fait moins de 32 caractères ou reprend la valeur d'exemple |
 | `CORS_ORIGIN` | Optionnel : origines autorisées, séparées par des virgules (toutes si vide) |
 | `NODE_ENV` | Mettre `production` en production pour masquer les traces d'erreur dans les réponses |
 
