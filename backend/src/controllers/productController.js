@@ -10,7 +10,8 @@ exports.getProducts = async (req, res) => {
     const products = await Product.find().populate('category', 'name');
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -24,7 +25,8 @@ exports.getProductById = async (req, res) => {
     }
     res.json(product);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -122,7 +124,8 @@ exports.deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Produit supprimé' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 

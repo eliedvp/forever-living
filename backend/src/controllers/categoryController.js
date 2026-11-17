@@ -10,7 +10,8 @@ exports.getCategories = async (req, res) => {
     const categories = await Category.find();
     res.json(categories);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -24,7 +25,8 @@ exports.getCategoryById = async (req, res) => {
     }
     res.json(category);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -122,7 +124,8 @@ exports.deleteCategory = async (req, res) => {
     await Category.findByIdAndDelete(req.params.id);
     res.json({ message: 'Catégorie supprimée' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 

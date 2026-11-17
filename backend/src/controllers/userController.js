@@ -7,7 +7,8 @@ exports.getUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -44,7 +45,8 @@ exports.getUsers = async (req, res) => {
     const users = await User.find().select('-password');
     res.json(users);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -58,7 +60,8 @@ exports.getUserById = async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -72,7 +75,8 @@ exports.deleteUser = async (req, res) => {
     }
     res.json({ message: 'Utilisateur supprimé' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
