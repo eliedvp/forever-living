@@ -14,7 +14,7 @@ Application e-commerce full stack (MongoDB, Express, React, Node.js) dédiée au
 - Rôles utilisateur / administrateur : les routes de gestion sont protégées par deux middlewares (`protect`, `admin`).
 - Produits et catégories : lecture publique, création / modification / suppression réservées aux administrateurs, avec upload d'image (JPEG, PNG, GIF, WebP, 5 Mo max).
 - Panier persistant par utilisateur : ajout, modification de quantité, suppression d'article, vidage.
-- Commandes : création à partir du panier (prix et total recalculés côté serveur), historique personnel, consultation limitée au propriétaire ou à un administrateur, liste globale et changement de statut pour l'administrateur.
+- Commandes : création à partir du panier (prix et total recalculés côté serveur, stock vérifié et décrémenté), historique personnel, consultation limitée au propriétaire ou à un administrateur, liste globale et changement de statut pour l'administrateur.
 - Validation des entrées avec `express-validator` et gestion centralisée des erreurs.
 
 **Interface (frontend)**
@@ -100,7 +100,7 @@ La carte Google Maps de la page contact n'est chargée que si une clé est fourn
 
 ```bash
 # Backend : middlewares d'authentification et d'administration, règles d'accès
-# aux commandes et au panier, mise à jour du profil, validation des uploads
+# aux commandes et au panier, stock, profil, codes d'erreur, validation des uploads
 cd backend && npm test
 
 # Frontend
@@ -143,10 +143,32 @@ Préfixe : `/api`. « Auth » = en-tête `Authorization: Bearer <token>` requis 
 | GET | `/orders/all` | Admin | Lister toutes les commandes |
 | PUT | `/orders/:id/status` | Admin | Changer le statut (`pending`, `paid`, `shipped`, `delivered`, `cancelled`) |
 
+### Codes de retour
+
+| Code | Cas |
+| --- | --- |
+| 400 | Entrée invalide : erreurs `express-validator` (`errors`), validation Mongoose (`message` + `errors` par champ), identifiant mal formé, JSON illisible, panier vide ou contenant un produit supprimé, fichier refusé |
+| 401 | Token absent, invalide ou expiré (ou compte supprimé) ; identifiants de connexion incorrects |
+| 403 | Utilisateur authentifié sans les droits requis : route administrateur, commande d'un autre client |
+| 404 | Ressource ou route inexistante |
+| 409 | Stock insuffisant à la création d'une commande ; valeur unique déjà utilisée (ex. email lors de la modification du profil) |
+| 500 | Erreur inattendue : détail journalisé côté serveur, réponse `{ "message": "Erreur serveur" }` sans détail interne (hors `NODE_ENV=development`) |
+
+Toutes les erreurs passent par un middleware centralisé (`backend/src/middleware/errorMiddleware.js`).
+
+### Règles métier des commandes
+
+- Le total est calculé à partir des prix enregistrés en base ; les montants envoyés par le client sont ignorés.
+- Le champ `stock` d'un produit vaut 0 par défaut : un produit sans stock renseigné ne peut pas être commandé.
+- Chaque article réserve son stock par une mise à jour atomique conditionnelle (`findOneAndUpdate` avec `stock >= quantité` et `$inc`) : deux commandes simultanées ne peuvent pas faire passer le stock sous zéro.
+- Si un article manque, la commande est refusée (409, avec `productId`) et le stock déjà réservé pour les autres articles est restitué. Il l'est aussi si l'enregistrement de la commande échoue.
+- Cette compensation remplace une transaction MongoDB, qui exigerait un replica set : en cas d'arrêt brutal du serveur entre deux étapes, un écart de stock reste possible.
+- Le passage d'une commande au statut `cancelled` ne restitue pas le stock.
+
 ## Pistes d'amélioration
 
 - Ajouter les pages de connexion et d'inscription côté frontend (les liens existent, les routes pas encore) et protéger les routes d'administration côté client.
 - Relier le panier et le paiement du frontend aux endpoints `/cart` et `/orders`, et connecter les écrans commandes, utilisateurs et tableau de bord à l'API.
-- Vérifier et décrémenter le stock lors de la création d'une commande.
+- Restituer le stock lors de l'annulation d'une commande.
 - Ajouter une limitation de débit sur les routes d'authentification.
 - Corriger les avertissements ESLint du frontend pour pouvoir ajouter le build à la CI.
