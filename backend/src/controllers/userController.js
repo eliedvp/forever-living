@@ -2,19 +2,18 @@ const User = require('../models/User');
 
 // @desc    Récupérer le profil de l'utilisateur
 // @route   GET /api/users/profile
-exports.getUserProfile = async (req, res) => {
+exports.getUserProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Mettre à jour le profil de l'utilisateur
 // @route   PUT /api/users/profile
-exports.updateUserProfile = async (req, res) => {
+exports.updateUserProfile = async (req, res, next) => {
   try {
     // Seuls ces champs sont modifiables : isAdmin (ou tout autre champ) est ignoré
     const { name, email, password } = req.body;
@@ -34,25 +33,24 @@ exports.updateUserProfile = async (req, res) => {
     delete updatedUser.password;
     res.json(updatedUser);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Récupérer tous les utilisateurs (admin)
 // @route   GET /api/users
-exports.getUsers = async (req, res) => {
+exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.find().select('-password');
     res.json(users);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Récupérer un utilisateur par ID (admin)
 // @route   GET /api/users/:id
-exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     if (!user) {
@@ -60,14 +58,13 @@ exports.getUserById = async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Supprimer un utilisateur (admin)
 // @route   DELETE /api/users/:id
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -75,8 +72,7 @@ exports.deleteUser = async (req, res) => {
     }
     res.json({ message: 'Utilisateur supprimé' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 

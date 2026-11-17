@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Configuration de build sans secret, versionnée volontairement
+!.env.production

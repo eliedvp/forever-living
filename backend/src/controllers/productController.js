@@ -2,22 +2,25 @@ const Product = require('../models/Product');
 const fs = require('fs');
 const path = require('path');
 const { resolveUploadPath } = require('../utils/uploadPath');
+const pickFields = require('../utils/pickFields');
+
+// Champs modifiables depuis la requête (l'image passe uniquement par l'upload)
+const PRODUCT_FIELDS = ['name', 'description', 'price', 'stock', 'category'];
 
 // @desc    Récupérer tous les produits
 // @route   GET /api/products
-exports.getProducts = async (req, res) => {
+exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.find().populate('category', 'name');
     res.json(products);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Récupérer un produit par ID
 // @route   GET /api/products/:id
-exports.getProductById = async (req, res) => {
+exports.getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id).populate('category', 'name');
     if (!product) {
@@ -25,16 +28,15 @@ exports.getProductById = async (req, res) => {
     }
     res.json(product);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Créer un produit
 // @route   POST /api/products
-exports.createProduct = async (req, res) => {
+exports.createProduct = async (req, res, next) => {
   try {
-    const productData = { ...req.body };
+    const productData = pickFields(req.body, PRODUCT_FIELDS);
     
     // Si une image est uploadée, ajouter le chemin de l'image
     if (req.file) {
@@ -51,13 +53,13 @@ exports.createProduct = async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Mettre à jour un produit
 // @route   PUT /api/products/:id
-exports.updateProduct = async (req, res) => {
+exports.updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -71,7 +73,7 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
 
-    const updateData = { ...req.body };
+    const updateData = pickFields(req.body, PRODUCT_FIELDS);
     
     // Si une nouvelle image est uploadée
     if (req.file) {
@@ -100,13 +102,13 @@ exports.updateProduct = async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Supprimer un produit
 // @route   DELETE /api/products/:id
-exports.deleteProduct = async (req, res) => {
+exports.deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -124,8 +126,7 @@ exports.deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Produit supprimé' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 

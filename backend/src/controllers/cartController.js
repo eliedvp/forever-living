@@ -1,9 +1,10 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const { MAX_QTY_PER_ITEM } = require('../config/cart');
 
 // @desc    Récupérer le panier de l'utilisateur
 // @route   GET /api/cart
-exports.getCart = async (req, res) => {
+exports.getCart = async (req, res, next) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
     if (!cart) {
@@ -11,14 +12,13 @@ exports.getCart = async (req, res) => {
     }
     res.json(cart);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Ajouter un produit au panier
 // @route   POST /api/cart
-exports.addToCart = async (req, res) => {
+exports.addToCart = async (req, res, next) => {
   try {
     const { productId, qty } = req.body;
     const product = await Product.findById(productId);
@@ -35,8 +35,16 @@ exports.addToCart = async (req, res) => {
       (item) => item.product.toString() === productId
     );
 
+    // Le plafond s'applique à la quantité cumulée, pas seulement à l'ajout courant
+    const newQty = (existingItem ? existingItem.qty : 0) + (qty || 1);
+    if (newQty > MAX_QTY_PER_ITEM) {
+      return res
+        .status(400)
+        .json({ message: `Quantité maximale par article : ${MAX_QTY_PER_ITEM}` });
+    }
+
     if (existingItem) {
-      existingItem.qty += qty || 1;
+      existingItem.qty = newQty;
     } else {
       cart.items.push({ product: productId, qty: qty || 1 });
     }
@@ -45,13 +53,13 @@ exports.addToCart = async (req, res) => {
     await cart.populate('items.product');
     res.json(cart);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Mettre à jour la quantité d'un produit dans le panier
 // @route   PUT /api/cart/:itemId
-exports.updateCartItem = async (req, res) => {
+exports.updateCartItem = async (req, res, next) => {
   try {
     const { qty } = req.body;
     const cart = await Cart.findOne({ user: req.user._id });
@@ -69,13 +77,13 @@ exports.updateCartItem = async (req, res) => {
     await cart.populate('items.product');
     res.json(cart);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Supprimer un produit du panier
 // @route   DELETE /api/cart/:itemId
-exports.removeFromCart = async (req, res) => {
+exports.removeFromCart = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
@@ -92,13 +100,13 @@ exports.removeFromCart = async (req, res) => {
     await cart.populate('items.product');
     res.json(cart);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Vider le panier
 // @route   DELETE /api/cart
-exports.clearCart = async (req, res) => {
+exports.clearCart = async (req, res, next) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
@@ -109,7 +117,7 @@ exports.clearCart = async (req, res) => {
     await cart.save();
     res.json(cart);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 

@@ -12,9 +12,9 @@ Application e-commerce full stack (MongoDB, Express, React, Node.js) dédiée au
 
 - Inscription et connexion avec mots de passe hachés (bcrypt) et jetons JWT (validité 30 jours).
 - Rôles utilisateur / administrateur : les routes de gestion sont protégées par deux middlewares (`protect`, `admin`).
-- Produits et catégories : lecture publique, création / modification / suppression réservées aux administrateurs, avec upload d'image (JPEG, PNG, GIF, WebP, 5 Mo max).
-- Panier persistant par utilisateur : ajout, modification de quantité, suppression d'article, vidage.
-- Commandes : création à partir du panier (prix et total recalculés côté serveur), historique personnel, consultation limitée au propriétaire ou à un administrateur, liste globale et changement de statut pour l'administrateur.
+- Produits et catégories : lecture publique, création / modification / suppression réservées aux administrateurs, avec upload d'image (JPEG, PNG, GIF, WebP, 5 Mo max). Seuls les champs prévus sont acceptés (`name`, `description`, `price`, `stock`, `category` pour un produit ; `name`, `description` pour une catégorie) : les autres clés et les opérateurs MongoDB du corps de requête sont ignorés.
+- Panier persistant par utilisateur : ajout, modification de quantité, suppression d'article, vidage. La quantité d'un même article est un entier de 1 à 99, cumul des ajouts compris (400 au-delà).
+- Commandes : création à partir du panier (prix et total recalculés côté serveur, stock vérifié et décrémenté), historique personnel, consultation limitée au propriétaire ou à un administrateur, liste globale et changement de statut pour l'administrateur.
 - Validation des entrées avec `express-validator` et gestion centralisée des erreurs.
 
 **Interface (frontend)**
@@ -100,7 +100,7 @@ La carte Google Maps de la page contact n'est chargée que si une clé est fourn
 
 ```bash
 # Backend : middlewares d'authentification et d'administration, règles d'accès
-# aux commandes et au panier, mise à jour du profil, validation des uploads
+# aux commandes et au panier, stock, profil, codes d'erreur, validation des uploads
 cd backend && npm test
 
 # Frontend
@@ -143,10 +143,33 @@ Préfixe : `/api`. « Auth » = en-tête `Authorization: Bearer <token>` requis 
 | GET | `/orders/all` | Admin | Lister toutes les commandes |
 | PUT | `/orders/:id/status` | Admin | Changer le statut (`pending`, `paid`, `shipped`, `delivered`, `cancelled`) |
 
+### Codes de retour
+
+| Code | Cas |
+| --- | --- |
+| 400 | Entrée invalide : erreurs `express-validator` (`errors`), validation Mongoose (`message` + `errors` par champ), identifiant mal formé, JSON illisible, panier vide ou contenant un produit supprimé, fichier refusé |
+| 401 | Token absent, invalide ou expiré (ou compte supprimé) ; identifiants de connexion incorrects |
+| 403 | Utilisateur authentifié sans les droits requis : route administrateur, commande d'un autre client |
+| 404 | Ressource ou route inexistante |
+| 409 | Stock insuffisant à la création d'une commande ; changement de statut d'une commande annulée ; valeur unique déjà utilisée (ex. email lors de la modification du profil) |
+| 500 | Erreur inattendue : détail journalisé côté serveur, réponse `{ "message": "Erreur serveur" }` sans détail interne (hors `NODE_ENV=development`) |
+
+Toutes les erreurs passent par un middleware centralisé (`backend/src/middleware/errorMiddleware.js`).
+
+### Règles métier des commandes
+
+- Le total est calculé à partir des prix enregistrés en base ; les montants envoyés par le client sont ignorés.
+- Le champ `stock` d'un produit vaut 0 par défaut : un produit sans stock renseigné ne peut pas être commandé.
+- Le panier est pris et vidé en une seule opération atomique : deux requêtes simultanées ne peuvent pas créer deux commandes à partir du même panier (la seconde reçoit 400 « Panier vide »).
+- Chaque article réserve son stock par une mise à jour atomique conditionnelle (`findOneAndUpdate` avec `stock >= quantité` et `$inc`) : deux commandes simultanées ne peuvent pas faire passer le stock sous zéro.
+- Si la commande échoue (stock insuffisant : 409 avec `productId` ; produit supprimé : 400 ; erreur serveur : 500), le stock déjà réservé est restitué et les articles sont remis dans le panier.
+- L'annulation (`PUT /orders/:id/status` avec `cancelled`) restitue le stock des articles. La transition est conditionnelle (`status != 'cancelled'`), donc une seconde annulation ne restitue rien.
+- Une commande annulée est définitive : la faire repasser dans un autre statut renvoie 409, car son stock a déjà été rendu.
+- Ces compensations remplacent des transactions MongoDB, qui exigeraient un replica set : en cas d'arrêt brutal du serveur entre deux étapes, un écart de stock ou de panier reste possible.
+
 ## Pistes d'amélioration
 
 - Ajouter les pages de connexion et d'inscription côté frontend (les liens existent, les routes pas encore) et protéger les routes d'administration côté client.
 - Relier le panier et le paiement du frontend aux endpoints `/cart` et `/orders`, et connecter les écrans commandes, utilisateurs et tableau de bord à l'API.
-- Vérifier et décrémenter le stock lors de la création d'une commande.
 - Ajouter une limitation de débit sur les routes d'authentification.
 - Corriger les avertissements ESLint du frontend pour pouvoir ajouter le build à la CI.
