@@ -15,7 +15,7 @@ const Product = require('../src/models/Product');
 const imageFileFilter = require('../src/middleware/imageFileFilter');
 const { errorHandler } = require('../src/middleware/errorMiddleware');
 const { resolveUploadPath, UPLOADS_ROOT } = require('../src/utils/uploadPath');
-const { mockQuery, tokenFor, users, USER_ID, OTHER_USER_ID, ADMIN_ID } = require('./helpers');
+const { mockQuery, takenCart, tokenFor, users, USER_ID, OTHER_USER_ID, ADMIN_ID } = require('./helpers');
 
 const auth = (id) => ({ Authorization: `Bearer ${tokenFor(id)}` });
 
@@ -153,14 +153,14 @@ describe('commandes', () => {
   });
 
   test('createOrder calcule le total à partir des prix en base, pas du client', async () => {
-    const cart = {
-      items: [
-        { product: { _id: 'p1', price: 12 }, qty: 2 },
-        { product: { _id: 'p2', price: 5 }, qty: 1 },
+    const cart = takenCart(
+      [
+        { product: 'p1', qty: 2 },
+        { product: 'p2', qty: 1 },
       ],
-      save: jest.fn().mockResolvedValue(undefined),
-    };
-    Cart.findOne.mockReturnValue(mockQuery(cart));
+      { p1: { _id: 'p1', price: 12 }, p2: { _id: 'p2', price: 5 } }
+    );
+    Cart.findOneAndUpdate.mockResolvedValue(cart);
     Product.findOneAndUpdate.mockResolvedValue({ stock: 10 });
     Order.create.mockImplementation(async (data) => ({ ...data, populate: jest.fn() }));
 
@@ -173,7 +173,6 @@ describe('commandes', () => {
     expect(Order.create).toHaveBeenCalledWith(
       expect.objectContaining({ user: USER_ID, totalPrice: 29 })
     );
-    expect(cart.items).toEqual([]);
   });
 });
 
@@ -246,17 +245,46 @@ describe('changement de statut et annulation', () => {
 });
 
 describe('stock à la création de commande', () => {
-  const buildCart = () => ({
-    items: [
-      { product: { _id: 'p1', name: 'Gel Aloe', price: 12 }, qty: 2 },
-      { product: { _id: 'p2', name: 'Crème', price: 5 }, qty: 3 },
-    ],
-    save: jest.fn().mockResolvedValue(undefined),
+  const catalog = {
+    p1: { _id: 'p1', name: 'Gel Aloe', price: 12 },
+    p2: { _id: 'p2', name: 'Crème', price: 5 },
+  };
+  const rawItems = [
+    { product: 'p1', qty: 2 },
+    { product: 'p2', qty: 3 },
+  ];
+  const buildCart = () => takenCart(rawItems, catalog);
+  const restoredCart = { $push: { items: { $each: rawItems } } };
+
+  test('prend et vide le panier en une seule opération atomique', async () => {
+    Cart.findOneAndUpdate.mockResolvedValue(buildCart());
+    Product.findOneAndUpdate.mockResolvedValue({ stock: 10 });
+    Order.create.mockImplementation(async (data) => ({ ...data, populate: jest.fn() }));
+
+    const res = await request(app).post('/api/orders').set(auth(USER_ID));
+
+    expect(res.status).toBe(201);
+    expect(Cart.findOneAndUpdate).toHaveBeenCalledWith(
+      { user: USER_ID, 'items.0': { $exists: true } },
+      { $set: { items: [] } },
+      { new: false }
+    );
+    expect(Cart.updateOne).not.toHaveBeenCalled();
+  });
+
+  test('une seconde commande simultanée trouve le panier déjà pris (400 Panier vide)', async () => {
+    Cart.findOneAndUpdate.mockResolvedValue(null);
+
+    const res = await request(app).post('/api/orders').set(auth(USER_ID));
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Panier vide');
+    expect(Product.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(Order.create).not.toHaveBeenCalled();
   });
 
   test('décrémente le stock de chaque article de façon atomique et conditionnelle', async () => {
-    const cart = buildCart();
-    Cart.findOne.mockReturnValue(mockQuery(cart));
+    Cart.findOneAndUpdate.mockResolvedValue(buildCart());
     Product.findOneAndUpdate.mockResolvedValue({ stock: 10 });
     Order.create.mockImplementation(async (data) => ({ ...data, populate: jest.fn() }));
 
@@ -279,12 +307,12 @@ describe('stock à la création de commande', () => {
     expect(Product.updateOne).not.toHaveBeenCalled();
   });
 
-  test('refuse la commande (409) si le stock est insuffisant et restitue le stock déjà réservé', async () => {
-    const cart = buildCart();
-    Cart.findOne.mockReturnValue(mockQuery(cart));
+  test('stock insuffisant : 409, stock déjà réservé restitué et panier restauré', async () => {
+    Cart.findOneAndUpdate.mockResolvedValue(buildCart());
     // p1 réservé, p2 en rupture (la condition $gte n'est pas satisfaite)
     Product.findOneAndUpdate.mockResolvedValueOnce({ stock: 8 }).mockResolvedValueOnce(null);
     Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    Cart.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     const res = await request(app).post('/api/orders').set(auth(USER_ID));
 
@@ -294,15 +322,16 @@ describe('stock à la création de commande', () => {
     expect(Product.updateOne).toHaveBeenCalledTimes(1);
     expect(Product.updateOne).toHaveBeenCalledWith({ _id: 'p1' }, { $inc: { stock: 2 } });
     expect(Order.create).not.toHaveBeenCalled();
-    expect(cart.save).not.toHaveBeenCalled();
-    expect(cart.items).toHaveLength(2);
+    expect(Cart.updateOne).toHaveBeenCalledTimes(1);
+    expect(Cart.updateOne).toHaveBeenCalledWith({ user: USER_ID }, restoredCart);
   });
 
-  test('restitue le stock réservé si la création de la commande échoue', async () => {
+  test('échec de création : stock restitué, panier restauré et 500 générique', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    Cart.findOne.mockReturnValue(mockQuery(buildCart()));
+    Cart.findOneAndUpdate.mockResolvedValue(buildCart());
     Product.findOneAndUpdate.mockResolvedValue({ stock: 10 });
     Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    Cart.updateOne.mockResolvedValue({ modifiedCount: 1 });
     Order.create.mockRejectedValue(new Error('écriture impossible'));
 
     const res = await request(app).post('/api/orders').set(auth(USER_ID));
@@ -311,13 +340,14 @@ describe('stock à la création de commande', () => {
     expect(res.body.message).toBe('Erreur serveur');
     expect(Product.updateOne).toHaveBeenCalledWith({ _id: 'p1' }, { $inc: { stock: 2 } });
     expect(Product.updateOne).toHaveBeenCalledWith({ _id: 'p2' }, { $inc: { stock: 3 } });
+    expect(Cart.updateOne).toHaveBeenCalledTimes(1);
+    expect(Cart.updateOne).toHaveBeenCalledWith({ user: USER_ID }, restoredCart);
     console.error.mockRestore();
   });
 
-  test('refuse la commande (400) si un produit du panier a été supprimé', async () => {
-    Cart.findOne.mockReturnValue(
-      mockQuery({ items: [{ product: null, qty: 1 }], save: jest.fn() })
-    );
+  test("produit supprimé : 400 et panier restauré avec ses identifiants d'origine", async () => {
+    Cart.findOneAndUpdate.mockResolvedValue(takenCart([{ product: 'p-supprime', qty: 1 }], catalog));
+    Cart.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     const res = await request(app).post('/api/orders').set(auth(USER_ID));
 
@@ -325,6 +355,10 @@ describe('stock à la création de commande', () => {
     expect(res.body.message).toBe("Un produit du panier n'est plus disponible");
     expect(Product.findOneAndUpdate).not.toHaveBeenCalled();
     expect(Order.create).not.toHaveBeenCalled();
+    expect(Cart.updateOne).toHaveBeenCalledWith(
+      { user: USER_ID },
+      { $push: { items: { $each: [{ product: 'p-supprime', qty: 1 }] } } }
+    );
   });
 });
 
@@ -527,7 +561,7 @@ describe('erreurs serveur', () => {
 
   test('createOrder ne divulgue pas le message d\x27une erreur interne (500 générique)', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    Cart.findOne.mockImplementation(() => {
+    Cart.findOneAndUpdate.mockImplementation(() => {
       throw new Error('détail interne MongoDB');
     });
 
