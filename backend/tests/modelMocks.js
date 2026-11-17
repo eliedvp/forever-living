@@ -3,8 +3,10 @@ const model = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
   findById: jest.fn(),
+  findOneAndUpdate: jest.fn(),
   findByIdAndUpdate: jest.fn(),
   findByIdAndDelete: jest.fn(),
+  updateOne: jest.fn(),
   create: jest.fn(),
 });
 

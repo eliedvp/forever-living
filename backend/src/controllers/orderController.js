@@ -1,5 +1,17 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const Product = require('../models/Product');
+
+// Restitue le stock déjà réservé lorsqu'une commande échoue en cours de création.
+// Les transactions MongoDB exigeant un replica set, la compensation est faite à la main.
+const releaseStock = (reservedItems) =>
+  Promise.all(
+    reservedItems.map(({ product, qty }) =>
+      Product.updateOne({ _id: product }, { $inc: { stock: qty } }).catch((err) => {
+        console.error(`Restitution du stock impossible pour le produit ${product}`, err);
+      })
+    )
+  );
 
 // @desc    Créer une commande
 // @route   POST /api/orders
@@ -10,6 +22,12 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ message: 'Panier vide' });
     }
 
+    // Un produit supprimé depuis son ajout au panier n'est plus peuplé (null)
+    if (cart.items.some((item) => !item.product)) {
+      return res.status(400).json({ message: "Un produit du panier n'est plus disponible" });
+    }
+
+    // Les prix viennent toujours de la base, jamais du client
     const orderItems = cart.items.map((item) => ({
       product: item.product._id,
       qty: item.qty,
@@ -21,11 +39,37 @@ exports.createOrder = async (req, res, next) => {
       0
     );
 
-    const order = await Order.create({
-      user: req.user._id,
-      orderItems,
-      totalPrice,
-    });
+    // Réservation du stock article par article : la condition $gte et le $inc
+    // sont appliqués dans une seule opération atomique, ce qui empêche deux
+    // commandes simultanées de faire passer le stock sous zéro.
+    const reservedItems = [];
+    let order;
+    try {
+      for (const [index, item] of orderItems.entries()) {
+        const updated = await Product.findOneAndUpdate(
+          { _id: item.product, stock: { $gte: item.qty } },
+          { $inc: { stock: -item.qty } },
+          { new: true }
+        );
+        if (!updated) {
+          await releaseStock(reservedItems);
+          return res.status(409).json({
+            message: `Stock insuffisant pour le produit « ${cart.items[index].product.name} »`,
+            productId: item.product,
+          });
+        }
+        reservedItems.push(item);
+      }
+
+      order = await Order.create({
+        user: req.user._id,
+        orderItems,
+        totalPrice,
+      });
+    } catch (err) {
+      await releaseStock(reservedItems);
+      throw err;
+    }
 
     // Vider le panier après création de la commande
     cart.items = [];
