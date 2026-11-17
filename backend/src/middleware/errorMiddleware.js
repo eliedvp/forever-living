@@ -10,8 +10,13 @@ exports.errorHandler = (err, req, res, next) => {
     err.name === 'MulterError' ? 400 : err.status >= 400 && err.status < 500 ? err.status : null;
   const statusCode = res.statusCode === 200 ? clientErrorStatus || 500 : res.statusCode;
   res.status(statusCode);
+  // Erreurs serveur : détail journalisé côté serveur, message générique côté client
+  if (statusCode >= 500) {
+    console.error(err);
+  }
+  const isDevelopment = process.env.NODE_ENV === 'development';
   res.json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    message: statusCode >= 500 && !isDevelopment ? 'Erreur serveur' : err.message,
+    stack: isDevelopment ? err.stack : null,
   });
 };

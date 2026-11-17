@@ -13,6 +13,7 @@ const Order = require('../src/models/Order');
 const Cart = require('../src/models/Cart');
 const Product = require('../src/models/Product');
 const imageFileFilter = require('../src/middleware/imageFileFilter');
+const { errorHandler } = require('../src/middleware/errorMiddleware');
 const { resolveUploadPath, UPLOADS_ROOT } = require('../src/utils/uploadPath');
 const { mockQuery, tokenFor, users, USER_ID, OTHER_USER_ID, ADMIN_ID } = require('./helpers');
 
@@ -252,5 +253,66 @@ describe('uploads d\'images', () => {
     expect(resolveUploadPath('/etc/passwd')).toBeNull();
     expect(resolveUploadPath('')).toBeNull();
     expect(resolveUploadPath(undefined)).toBeNull();
+  });
+});
+
+describe('erreurs serveur', () => {
+  const fakeRes = () => {
+    const res = { statusCode: 200 };
+    res.status = jest.fn((code) => {
+      res.statusCode = code;
+      return res;
+    });
+    res.json = jest.fn();
+    return res;
+  };
+
+  test('un contrôleur renvoie un message générique pour une erreur 500', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    Product.find.mockImplementation(() => {
+      throw new Error('détail interne MongoDB');
+    });
+
+    const res = await request(app).get('/api/products');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ message: 'Erreur serveur' });
+    expect(console.error).toHaveBeenCalled();
+    console.error.mockRestore();
+  });
+
+  test('le gestionnaire d\x27erreurs ne renvoie ni stack ni détail hors développement', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const res = fakeRes();
+
+    errorHandler(new Error('détail interne'), {}, res, () => {});
+
+    expect(res.statusCode).toBe(500);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Erreur serveur', stack: null });
+    console.error.mockRestore();
+  });
+
+  test('le gestionnaire d\x27erreurs renvoie la stack uniquement en développement', () => {
+    const previousEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const res = fakeRes();
+    const err = new Error('détail interne');
+
+    try {
+      errorHandler(err, {}, res, () => {});
+    } finally {
+      process.env.NODE_ENV = previousEnv;
+      console.error.mockRestore();
+    }
+
+    expect(res.json).toHaveBeenCalledWith({ message: 'détail interne', stack: err.stack });
+  });
+
+  test('une route inconnue renvoie 404 sans stack', async () => {
+    const res = await request(app).get('/api/inexistante');
+
+    expect(res.status).toBe(404);
+    expect(res.body.stack).toBeNull();
   });
 });

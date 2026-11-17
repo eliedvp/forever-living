@@ -45,7 +45,8 @@ exports.getMyOrders = async (req, res) => {
     const orders = await Order.find({ user: req.user._id }).populate('orderItems.product');
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -65,7 +66,8 @@ exports.getOrderById = async (req, res) => {
 
     res.json(order);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
@@ -76,7 +78,8 @@ exports.getAllOrders = async (req, res) => {
     const orders = await Order.find().populate('user', 'name email').populate('orderItems.product');
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
