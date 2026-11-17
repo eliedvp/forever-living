@@ -60,7 +60,7 @@ exports.getOrderById = async (req, res, next) => {
 
     // Vérifier que l'utilisateur est le propriétaire ou un admin
     if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
-      return res.status(401).json({ message: 'Accès non autorisé' });
+      return res.status(403).json({ message: 'Accès refusé à cette commande' });
     }
 
     res.json(order);

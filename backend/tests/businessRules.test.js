@@ -96,8 +96,30 @@ describe('commandes', () => {
 
     const res = await request(app).get(`/api/orders/${order._id}`).set(auth(OTHER_USER_ID));
 
+    // Authentifié mais non propriétaire : 403 (401 est réservé au token absent ou invalide)
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Accès refusé à cette commande');
+  });
+
+  test('lire une commande sans token renvoie 401, pas 403', async () => {
+    const res = await request(app).get(`/api/orders/${order._id}`);
+
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('Accès non autorisé');
+    expect(Order.findById).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['delete', '/api/users/64b000000000000000000002'],
+    ['get', '/api/users/64b000000000000000000002'],
+    ['delete', '/api/products/64e000000000000000000001'],
+    ['put', '/api/products/64e000000000000000000001'],
+    ['post', '/api/categories'],
+    ['delete', '/api/categories/64f000000000000000000001'],
+  ])('un client authentifié non administrateur reçoit 403 sur %s %s', async (method, url) => {
+    const res = await request(app)[method](url).set(auth(USER_ID)).send({});
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Accès refusé, droits administrateur requis');
   });
 
   test('le propriétaire et un administrateur peuvent lire la commande', async () => {
