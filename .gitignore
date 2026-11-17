@@ -1,0 +1,28 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement (ne jamais versionner les secrets)
+.env
+.env.*
+!.env.example
+
+# Fichiers uploadés générés par l'API
+backend/uploads/
+
+# Builds et rapports
+build/
+dist/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Système / éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
