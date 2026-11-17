@@ -8,30 +8,33 @@
 
 ## 📋 Description
 
-Application frontend e-commerce développée pour Forever Living Products, leader mondial des produits naturels à base d'Aloe Vera. Cette plateforme moderne offre une expérience utilisateur exceptionnelle pour découvrir et acheter des produits de bien-être, beauté et santé.
+Interface React d'une boutique en ligne dédiée aux produits Forever Living à base d'Aloe Vera (bien-être, beauté et santé). Elle comprend un espace client et un back-office d'administration, et s'appuie sur l'API Express du dossier `backend/` (voir le README à la racine du dépôt).
 
 ### ✨ Fonctionnalités Principales
 
 #### 🛒 **Espace Client**
-- **Page d'accueil** : Présentation des produits phares avec slides dynamiques
-- **Boutique** : Catalogue complet avec filtrage et recherche
-- **Panier** : Gestion intuitive des achats
-- **Paiement** : Processus de checkout sécurisé
-- **À propos** : Histoire et mission de Forever Living Products
+- **Page d'accueil** : Présentation des produits phares avec slides (carrousel)
+- **Boutique / Catalogue** : Pages de présentation des produits
+- **Panier** et **Paiement** : Pages d'interface (pas encore reliées à l'API panier / commandes)
+- **Contact** et **À propos** : Pages d'information
+
+> Les pages client sont pour l'instant des intégrations statiques du thème : elles n'appellent pas encore l'API.
 
 #### 👨‍💼 **Administration**
-- **Dashboard** : Tableaux de bord avec statistiques
-- **Gestion des produits** : CRUD complet
-- **Gestion des catégories** : Organisation du catalogue
-- **Gestion des commandes** : Suivi et traitement
-- **Gestion des utilisateurs** : Administration des comptes
-- **Analytics** : Rapports et métriques
+- **Gestion des produits** : CRUD complet connecté à l'API, avec upload d'image, recherche et filtres
+- **Gestion des catégories** : CRUD complet connecté à l'API, avec upload d'image
+- **Dashboard, Analytics, Commandes, Utilisateurs** : écrans de maquette (données d'exemple), pas encore reliés à l'API
+
+### 🚧 **En cours / à venir**
+- Pages de connexion et d'inscription (les liens existent dans l'en-tête, pas encore les routes)
+- Branchement du panier et du paiement sur les endpoints `/api/cart` et `/api/orders`
+- Protection des routes d'administration côté client
  
 ## 🚀 Technologies Utilisées
 
 ### **Frontend**
 - **React 19.2.0** - Bibliothèque JavaScript moderne
-- **React Router DOM 7.9.5** - Gestion du routing
+- **React Router DOM 7** - Gestion du routing
 - **Bootstrap 5.3.8** - Framework CSS responsive
 - **SCSS/Sass** - Préprocesseur CSS avancé
 - **Bootstrap Icons** - Bibliothèque d'icônes
@@ -89,16 +92,16 @@ frontend/
 ## 🛠️ Installation & Configuration
 
 ### **Prérequis**
-- Node.js (version 16 ou supérieure)
-- npm ou yarn
-- Backend API Forever Living Products (port 8000)
+- Node.js 20 ou supérieur
+- npm
+- L'API du dossier `backend/` démarrée (port 5001 par défaut)
 
 ### **Installation**
 
 1. **Cloner le projet**
    ```bash
-   git clone <repository-url>
-   cd frontend
+   git clone https://github.com/eliedvp/forever-living.git
+   cd forever-living/frontend
    ```
 
 2. **Installer les dépendances**
@@ -106,11 +109,10 @@ frontend/
    npm install
    ```
 
-3. **Configuration de l'environnement**
+3. **Configuration de l'environnement (optionnel)**
    ```bash
-   # Créer un fichier .env.local
-   REACT_APP_API_URL=http://localhost:8000/api
-   REACT_APP_ENVIRONMENT=development
+   # Créer un fichier .env.local si l'API n'est pas sur l'URL par défaut
+   REACT_APP_API_URL=http://localhost:5001/api
    ```
 
 4. **Démarrer le serveur de développement**
@@ -130,7 +132,7 @@ npm start
 npm run build
 
 # Lancement des tests
-npm test
+npm test -- --watchAll=false
 
 # Éjection (attention : irréversible)
 npm run eject
@@ -140,7 +142,8 @@ npm run eject
 
 ### **Routes Client**
 - `/` - Page d'accueil
-- `/shop` - Boutique / Catalogue
+- `/shop` - Boutique
+- `/catalogue` - Catalogue
 - `/cart` - Panier
 - `/checkout` - Paiement
 - `/apropos` - À propos de Forever Living
@@ -186,19 +189,14 @@ npm run build
 
 Le build sera généré dans le dossier `build/` avec optimisation automatique.
 
-### **Configuration PWA**
-L'application est configurée comme Progressive Web App avec :
-- Service Worker
-- Manifest.json
-- Icônes optimisées
-- Cache offline
+Le fichier `public/manifest.json` et les icônes sont présents, mais aucun Service Worker n'est enregistré : l'application ne fonctionne pas hors ligne.
 
 ## 🤝 Contribution
 
 ### **Standards de Code**
 - ESLint configuré pour React
 - SCSS avec architecture 7-1
-- Tests avec Jest & React Testing Library
+- Tests avec Jest & React Testing Library (`src/api/config.test.js`), exécutés par la CI GitHub Actions
 
 ### **Commits**
 Utiliser des messages de commit conventionnels :
@@ -207,16 +205,6 @@ Utiliser des messages de commit conventionnels :
 - `style:` changements de style
 - `docs:` documentation
 
-## 📞 Support & Contact
-
-**Forever Living Products**
-- Site web : [foreverliving.com](https://www.foreverliving.com)
-- Support technique : support@foreverliving.com
-
-## 📄 Licence
-
-Copyright © 2025 Forever Living Products. Tous droits réservés.
-
 ---
 
-**Développé avec ❤️ pour Forever Living Products**
+**Développé avec ❤️ par [Tano Elie Vianney Adiko](https://eliedvp.vercel.app)**
