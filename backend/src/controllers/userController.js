@@ -15,11 +15,23 @@ exports.getUserProfile = async (req, res) => {
 // @route   PUT /api/users/profile
 exports.updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.user._id, req.body, {
-      new: true,
-      runValidators: true,
-    }).select('-password');
-    res.json(user);
+    // Seuls ces champs sont modifiables : isAdmin (ou tout autre champ) est ignoré
+    const { name, email, password } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    // save() déclenche le hook de hachage du mot de passe
+    if (password) user.password = password;
+
+    await user.save();
+
+    const updatedUser = user.toObject();
+    delete updatedUser.password;
+    res.json(updatedUser);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
