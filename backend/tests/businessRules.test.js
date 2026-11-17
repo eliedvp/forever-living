@@ -312,9 +312,89 @@ describe('erreurs serveur', () => {
     const res = await request(app).get('/api/products');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ message: 'Erreur serveur' });
+    expect(res.body).toEqual({ message: 'Erreur serveur', stack: null });
     expect(console.error).toHaveBeenCalled();
     console.error.mockRestore();
+  });
+
+  test('createOrder ne divulgue pas le message d\x27une erreur interne (500 générique)', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    Cart.findOne.mockImplementation(() => {
+      throw new Error('détail interne MongoDB');
+    });
+
+    const res = await request(app).post('/api/orders').set(auth(USER_ID));
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ message: 'Erreur serveur', stack: null });
+    expect(JSON.stringify(res.body)).not.toContain('MongoDB');
+    console.error.mockRestore();
+  });
+
+  test('une erreur d\x27écriture du panier renvoie 500 générique et non plus le message brut', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    Product.findById.mockRejectedValue(new Error('connexion perdue vers mongo:27017'));
+
+    const res = await request(app)
+      .post('/api/cart')
+      .set(auth(USER_ID))
+      .send({ productId: '64e000000000000000000001', qty: 1 });
+
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe('Erreur serveur');
+    console.error.mockRestore();
+  });
+
+  test('un identifiant mal formé (CastError) renvoie 400 sans détail Mongoose', async () => {
+    Product.findById.mockImplementation(() => {
+      throw Object.assign(new Error('Cast to ObjectId failed for value "abc" at path "_id"'), {
+        name: 'CastError',
+      });
+    });
+
+    const res = await request(app).get('/api/products/abc');
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Identifiant ou valeur invalide');
+  });
+
+  test('une erreur de validation Mongoose renvoie 400 avec le détail des champs', () => {
+    const res = fakeRes();
+    const err = Object.assign(new Error('Product validation failed'), {
+      name: 'ValidationError',
+      errors: { price: { path: 'price', message: 'Path `price` is required.' } },
+    });
+
+    errorHandler(err, {}, res, () => {});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Données invalides',
+      errors: [{ path: 'price', msg: 'Path `price` is required.' }],
+      stack: null,
+    });
+  });
+
+  test('une clé dupliquée (E11000) renvoie 409 sans exposer l\x27index', () => {
+    const res = fakeRes();
+    const err = Object.assign(new Error('E11000 duplicate key error collection: test.users index: email_1'), {
+      code: 11000,
+    });
+
+    errorHandler(err, {}, res, () => {});
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Cette valeur est déjà utilisée', stack: null });
+  });
+
+  test('un JSON mal formé renvoie 400 avec un message générique', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email": ');
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Corps de requête JSON invalide');
   });
 
   test('le gestionnaire d\x27erreurs ne renvoie ni stack ni détail hors développement', () => {
