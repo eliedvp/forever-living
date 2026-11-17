@@ -1,5 +1,6 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const { MAX_QTY_PER_ITEM } = require('../config/cart');
 
 // @desc    Récupérer le panier de l'utilisateur
 // @route   GET /api/cart
@@ -34,8 +35,16 @@ exports.addToCart = async (req, res, next) => {
       (item) => item.product.toString() === productId
     );
 
+    // Le plafond s'applique à la quantité cumulée, pas seulement à l'ajout courant
+    const newQty = (existingItem ? existingItem.qty : 0) + (qty || 1);
+    if (newQty > MAX_QTY_PER_ITEM) {
+      return res
+        .status(400)
+        .json({ message: `Quantité maximale par article : ${MAX_QTY_PER_ITEM}` });
+    }
+
     if (existingItem) {
-      existingItem.qty += qty || 1;
+      existingItem.qty = newQty;
     } else {
       cart.items.push({ product: productId, qty: qty || 1 });
     }
