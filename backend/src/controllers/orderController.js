@@ -126,22 +126,38 @@ exports.getAllOrders = async (req, res, next) => {
 
 // @desc    Mettre à jour le statut d'une commande (admin)
 // @route   PUT /api/orders/:id/status
+// Une commande annulée est définitive : son stock a été restitué, la rouvrir
+// le rendrait incohérent. La condition status != 'cancelled' rend aussi
+// l'annulation idempotente (le stock n'est restitué qu'une fois).
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, status: { $ne: 'cancelled' } },
       { status },
       { new: true, runValidators: true }
-    ).populate('orderItems.product');
+    );
 
     if (!order) {
-      return res.status(404).json({ message: 'Commande non trouvée' });
+      const existing = await Order.findById(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: 'Commande non trouvée' });
+      }
+      // Déjà annulée : une nouvelle annulation ne change rien
+      if (status === 'cancelled') {
+        await existing.populate('orderItems.product');
+        return res.json(existing);
+      }
+      return res.status(409).json({ message: 'Une commande annulée ne peut plus changer de statut' });
     }
 
+    if (status === 'cancelled') {
+      await releaseStock(order.orderItems);
+    }
+
+    await order.populate('orderItems.product');
     res.json(order);
   } catch (err) {
     next(err);
   }
 };
-
