@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const fs = require('fs');
 const path = require('path');
+const { resolveUploadPath } = require('../utils/uploadPath');
 
 // @desc    Récupérer tous les produits
 // @route   GET /api/products
@@ -74,8 +75,8 @@ exports.updateProduct = async (req, res) => {
     if (req.file) {
       // Supprimer l'ancienne image si elle existe
       if (product.image) {
-        const oldImagePath = path.join(__dirname, '../..', product.image);
-        if (fs.existsSync(oldImagePath)) {
+        const oldImagePath = resolveUploadPath(product.image);
+        if (oldImagePath && fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
       }
@@ -112,8 +113,8 @@ exports.deleteProduct = async (req, res) => {
 
     // Supprimer l'image associée si elle existe
     if (product.image) {
-      const imagePath = path.join(__dirname, '../..', product.image);
-      if (fs.existsSync(imagePath)) {
+      const imagePath = resolveUploadPath(product.image);
+      if (imagePath && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
     }

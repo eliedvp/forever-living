@@ -5,7 +5,10 @@ exports.notFound = (req, res, next) => {
 };
 
 exports.errorHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  // Erreurs client connues (fichier refusé, fichier trop volumineux, JSON invalide) : 400
+  const clientErrorStatus =
+    err.name === 'MulterError' ? 400 : err.status >= 400 && err.status < 500 ? err.status : null;
+  const statusCode = res.statusCode === 200 ? clientErrorStatus || 500 : res.statusCode;
   res.status(statusCode);
   res.json({
     message: err.message,
