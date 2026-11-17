@@ -81,7 +81,12 @@ exports.removeFromCart = async (req, res) => {
       return res.status(404).json({ message: 'Panier non trouvé' });
     }
 
-    cart.items.id(req.params.itemId).deleteOne();
+    const item = cart.items.id(req.params.itemId);
+    if (!item) {
+      return res.status(404).json({ message: 'Article non trouvé' });
+    }
+
+    item.deleteOne();
     await cart.save();
     await cart.populate('items.product');
     res.json(cart);
