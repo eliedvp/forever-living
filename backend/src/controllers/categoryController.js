@@ -5,19 +5,18 @@ const { resolveUploadPath } = require('../utils/uploadPath');
 
 // @desc    Récupérer toutes les catégories
 // @route   GET /api/categories
-exports.getCategories = async (req, res) => {
+exports.getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find();
     res.json(categories);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Récupérer une catégorie par ID
 // @route   GET /api/categories/:id
-exports.getCategoryById = async (req, res) => {
+exports.getCategoryById = async (req, res, next) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -25,14 +24,13 @@ exports.getCategoryById = async (req, res) => {
     }
     res.json(category);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // @desc    Créer une catégorie
 // @route   POST /api/categories
-exports.createCategory = async (req, res) => {
+exports.createCategory = async (req, res, next) => {
   try {
     const categoryData = { ...req.body };
     
@@ -51,13 +49,13 @@ exports.createCategory = async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Mettre à jour une catégorie
 // @route   PUT /api/categories/:id
-exports.updateCategory = async (req, res) => {
+exports.updateCategory = async (req, res, next) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -100,13 +98,13 @@ exports.updateCategory = async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    res.status(400).json({ message: err.message });
+    next(err);
   }
 };
 
 // @desc    Supprimer une catégorie
 // @route   DELETE /api/categories/:id
-exports.deleteCategory = async (req, res) => {
+exports.deleteCategory = async (req, res, next) => {
   try {
     const category = await Category.findById(req.params.id);
     if (!category) {
@@ -124,8 +122,7 @@ exports.deleteCategory = async (req, res) => {
     await Category.findByIdAndDelete(req.params.id);
     res.json({ message: 'Catégorie supprimée' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 

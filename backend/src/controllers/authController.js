@@ -2,7 +2,7 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
 // Inscription
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   const { name, email, password } = req.body;
   try {
     const userExists = await User.findOne({ email });
@@ -16,13 +16,12 @@ exports.register = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
 
 // Connexion
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -37,7 +36,6 @@ exports.login = async (req, res) => {
       res.status(401).json({ message: 'Identifiants invalides' });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erreur serveur' });
+    next(err);
   }
 };
